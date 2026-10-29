@@ -106,7 +106,7 @@ class FundNavTests(unittest.TestCase):
 
     def test_request_stays_bounded_without_ambient_source_selection(self):
         self.assertIn(funds.request(), capabilities())
-        self.assertEqual(len(capabilities()), 15)
+        self.assertEqual(len(capabilities()), 18)
         for args in (
             {"fund_code": "000001&extra=1"},
             {"page_size": 0},

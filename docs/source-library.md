@@ -3,7 +3,7 @@
 This public fork maintains a consumer-independent Python source library alongside
 the original a-stock-data skill. Its initial upstream baseline is
 `simonlin1212/a-stock-data@cb57c7aba720380b48a11dd065c6db57a2c39db9` (SKILL 3.10.3).
-The library has its own version, currently 0.1.1. The original skill version and
+The library has its own version, currently 0.1.2. The original skill version and
 the library version are different identities.
 
 ## Scope and adapters
@@ -13,7 +13,7 @@ evidence, parsing and clearly reported errors. Consumers own warehouse publicati
 historical PIT admission, task scheduling, policies and trading decisions. The
 library imports no consumer package, writes no warehouse and launches no timers.
 
-The maintained contracts enumerate 15 default requests across these adapters:
+The maintained contracts enumerate 18 default requests across these adapters:
 
 | Capability | Actual backend | Use ceiling |
 | --- | --- | --- |
@@ -25,6 +25,9 @@ The maintained contracts enumerate 15 default requests across these adapters:
 | `astock.disclosures` | CNINFO HTTPS announcement index | Index metadata and exact millisecond timestamp; no attachment/body retrieval |
 | `astock.news` | Sina roll channels 2516 and 2510 | Feed metadata and optional creation epoch; no regulatory-authority or freshness claim |
 | `astock.funds` | Eastmoney historical NAV, two rows for one explicitly requested fund by default | Native unit/accumulated NAV, daily change percent, valuation date and actual SGZT/SHZT status fields; currency requires fund metadata |
+| `astock.announcements` | Current Eastmoney `/api/security/ann`, two stock-specific records | Source notice-date label and original display/production time text; no completeness, recency or historical publication claim |
+| `astock.etf_flow` | Eastmoney one explicitly identified mainland ETF | Signed vendor-classified secondary-market trading flows and percentages; not subscription/redemption flow or verified investor-position change |
+| `astock.convertibles` | Jisilu current public `/webapi/cb/list/`, anonymous subset capped at 30 records | Anonymous partial coverage, separate convertible/exchangeable types, reference prices and optional time text; full-list login is not attempted |
 
 ChinaMoney is an additional backend to the original skill's Eastmoney LPR helper.
 It is not an automatic fallback disguised as the same provider. Duplicate endpoints
@@ -84,7 +87,7 @@ print(result.status, result.reason)
 ```
 
 For RSS, use `rss.request(provider="cnbc", url=rss.CNBC_URL)` and `rss.parse(raw)`.
-`astock.capabilities()` enumerates the 15 default source requests without network
+`astock.capabilities()` enumerates the 18 default source requests without network
 access; it is an interface registry, not an admission or availability registry.
 Parsing can be replayed from retained observations without network access.
 Consumers should pin an exact commit or built package digest, rather than install
@@ -96,6 +99,27 @@ valuation dates and finite Decimal values are checked; invalid values never beco
 zero. The source's `SGZT`/`SHZT` fields supply subscription/redemption status.
 Neither that status nor a valuation date establishes trade execution or publication
 time. NAV currency and accumulation interpretation remain the consumer's contract.
+
+The current announcement route replaces the older `/security/announcement` lead;
+they are different request contracts, not an automatic retry/fallback. A valid old
+notice can support archival metadata while failing a current-coverage use. Source
+notice dates and native millisecond clock text do not define a knowledge interval.
+
+ETF flow identity includes the exact security and venue; the request contains one
+`secids` value instead of a changing market ranking. Native field `f62` is the
+vendor's main-order net trading flow; `f66/f72/f78/f84` retain its size buckets.
+Monetary scale and percent-to-ratio normalization belong to the consuming contract.
+The unqualified total-market-value field from the original lead is omitted.
+
+Jisilu's anonymous response explicitly limits coverage. The parser retains that
+prompt and distinguishes C convertibles from E exchangeables, without asserting a
+complete bond universe. Its `info.date` and each row's optional `last_time` remain
+separate: combining them can manufacture a future quote time around midnight.
+Missing listing dates are unknown, not proof of trading/listing status. Reference
+prices supply neither a transaction nor a fill. The caller must qualify monetary
+units separately for each instrument type; support for E metadata is no numerical
+admission of exchangeable bonds. No login, cookies, hidden fields or paywall bypass
+are used by this adapter.
 
 ## Maintenance and checks
 
