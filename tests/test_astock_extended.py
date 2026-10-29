@@ -58,8 +58,8 @@ def quote_body(provider):
 class ExtendedSourceTests(unittest.TestCase):
     def test_capabilities_are_offline_unique_and_complete(self):
         values = capabilities()
-        self.assertEqual(len(values), 19)
-        self.assertEqual(len({x.identity for x in values}), 19)
+        self.assertEqual(len(values), 21)
+        self.assertEqual(len({x.identity for x in values}), 21)
 
     def test_all_macro_series_preserve_period_and_native_decimal_fields(self):
         for series in macro.REPORTS:
