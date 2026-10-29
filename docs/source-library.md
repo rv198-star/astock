@@ -3,7 +3,7 @@
 This public fork maintains a consumer-independent Python source library alongside
 the original a-stock-data skill. Its initial upstream baseline is
 `simonlin1212/a-stock-data@cb57c7aba720380b48a11dd065c6db57a2c39db9` (SKILL 3.10.3).
-The library has its own version, currently 0.1.0. The original skill version and
+The library has its own version, currently 0.1.1. The original skill version and
 the library version are different identities.
 
 ## Scope and adapters
@@ -13,7 +13,7 @@ evidence, parsing and clearly reported errors. Consumers own warehouse publicati
 historical PIT admission, task scheduling, policies and trading decisions. The
 library imports no consumer package, writes no warehouse and launches no timers.
 
-The maintained contracts enumerate 14 default requests across these adapters:
+The maintained contracts enumerate 15 default requests across these adapters:
 
 | Capability | Actual backend | Use ceiling |
 | --- | --- | --- |
@@ -24,6 +24,7 @@ The maintained contracts enumerate 14 default requests across these adapters:
 | `astock.bonds` | ChinaBond identified treasury maturity curve | Exact curve ID/name and source date; native maturity/yield pairs |
 | `astock.disclosures` | CNINFO HTTPS announcement index | Index metadata and exact millisecond timestamp; no attachment/body retrieval |
 | `astock.news` | Sina roll channels 2516 and 2510 | Feed metadata and optional creation epoch; no regulatory-authority or freshness claim |
+| `astock.funds` | Eastmoney historical NAV, two rows for one explicitly requested fund by default | Native unit/accumulated NAV, daily change percent, valuation date and actual SGZT/SHZT status fields; currency requires fund metadata |
 
 ChinaMoney is an additional backend to the original skill's Eastmoney LPR helper.
 It is not an automatic fallback disguised as the same provider. Duplicate endpoints
@@ -83,11 +84,18 @@ print(result.status, result.reason)
 ```
 
 For RSS, use `rss.request(provider="cnbc", url=rss.CNBC_URL)` and `rss.parse(raw)`.
-`astock.capabilities()` enumerates the 14 default source requests without network
+`astock.capabilities()` enumerates the 15 default source requests without network
 access; it is an interface registry, not an admission or availability registry.
 Parsing can be replayed from retained observations without network access.
 Consumers should pin an exact commit or built package digest, rather than install
 `main`/`latest` during a running job. No consumer-specific path is embedded here.
+
+Fund NAV identity is request-bound because the usual response does not echo the
+fund code. An echoed conflicting code rejects the response. Pagination counts,
+valuation dates and finite Decimal values are checked; invalid values never become
+zero. The source's `SGZT`/`SHZT` fields supply subscription/redemption status.
+Neither that status nor a valuation date establishes trade execution or publication
+time. NAV currency and accumulation interpretation remain the consumer's contract.
 
 ## Maintenance and checks
 
