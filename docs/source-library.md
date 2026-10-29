@@ -3,7 +3,7 @@
 This public fork maintains a consumer-independent Python source library alongside
 the original a-stock-data skill. Its initial upstream baseline is
 `simonlin1212/a-stock-data@cb57c7aba720380b48a11dd065c6db57a2c39db9` (SKILL 3.10.3).
-The library has its own version, currently 0.1.3. The original skill version and
+The library has its own version, currently 0.1.4. The original skill version and
 the library version are different identities.
 
 ## Scope and adapters
@@ -13,7 +13,7 @@ evidence, parsing and clearly reported errors. Consumers own warehouse publicati
 historical PIT admission, task scheduling, policies and trading decisions. The
 library imports no consumer package, writes no warehouse and launches no timers.
 
-The maintained contracts enumerate 19 default requests across these adapters:
+The maintained contracts enumerate 21 default requests across these adapters:
 
 | Capability | Actual backend | Use ceiling |
 | --- | --- | --- |
@@ -28,6 +28,8 @@ The maintained contracts enumerate 19 default requests across these adapters:
 | `astock.announcements` | Current Eastmoney `/api/security/ann`, two stock-specific records | Source notice-date label and original display/production time text; no completeness, recency or historical publication claim |
 | `astock.etf_flow` | Eastmoney one explicitly identified mainland ETF | Signed vendor-classified secondary-market trading flows and percentages; not subscription/redemption flow or verified investor-position change |
 | `astock.convertibles` | Jisilu current public `/webapi/cb/list/`, anonymous subset capped at 30 records | Anonymous partial coverage, separate convertible/exchangeable types, reference prices and optional time text; full-list login is not attempted |
+| `astock.futures` | Sina one named dated PVC contract | Contract-price diagnostics, independent date/time labels; exchange listing, trading-day and quantity admission remain the caller's responsibility |
+| `astock.a_shares` | Eastmoney one security's bounded margin window and one A-share block-trade date | First page only; source-native amounts, shares and fractional premium, explicit session labels and reported total/page counts |
 
 ChinaMoney is an additional backend to the original skill's Eastmoney LPR helper.
 It is not an automatic fallback disguised as the same provider. Duplicate endpoints
@@ -120,6 +122,35 @@ prices supply neither a transaction nor a fill. The caller must qualify monetary
 units separately for each instrument type; support for E metadata is no numerical
 admission of exchangeable bonds. No login, cookies, hidden fields or paywall bypass
 are used by this adapter.
+
+## Bounded A-share samples (0.1.4)
+
+`a_shares.margin_request(code, start=..., end=..., limit=2)` selects one SH/SZ
+A-share over at most 31 calendar days. `block_request(trade_date, limit=2)` selects
+one A-share disclosure date. Both request page 1, cap a caller's limit at 20, retain
+the source's reported total/pages, and never fetch the remaining pages. Default
+dates are frozen examples, not a rolling latest-session or complete-market feed.
+Parsing requires the same exact query and headers, matching security/venue and
+session scope, finite exact Decimal numbers and internally consistent margin
+totals. Missing numbers remain failures; valid zero and signed net flows survive.
+Reported block-trade amounts can differ from price times shares; retain the native
+amount rather than reconstructing it. Consumers disclose or isolate that discrepancy
+according to purpose; no rounding explanation is inferred.
+
+The publisher's [margin script](https://data.eastmoney.com/newstatic/js/rzrq/stock.js)
+labels balances/buy/repay/net amounts in yuan and stock-lending quantities in shares.
+The source's `RZRQYECZ` is a balance difference, not a day-to-day balance change;
+it remains unqualified metadata and is excluded from numeric metrics. The
+[block-trade table](https://data.eastmoney.com/dzjy/dzjy_mrmx.html) scales native
+`DEAL_VOLUME`/`DEAL_AMT` by 10^-4 for display in ten-thousand shares/yuan and scales
+`PREMIUM_RATIO` by 100 for percent display. The parser retains API values without
+these display conversions. Its vendor daily rank is not an exchange trade ID.
+
+Session-date labels are not publication, historical knowledge or execution times.
+Raw acquisition remains separately auditable. There is no assertion of the most
+recent session, complete pagination, exchange-independent verification, adjusted
+prices, trader identity, or a consumer's fill. Consumers qualify canonical units,
+purpose, dates, freshness and historical PIT independently.
 
 ## Maintenance and checks
 
