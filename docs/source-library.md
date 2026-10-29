@@ -6,19 +6,24 @@ the original a-stock-data skill. Its initial upstream baseline is
 The library has its own version, currently 0.1.0. The original skill version and
 the library version are different identities.
 
-## Scope and first adapters
+## Scope and adapters
 
 `astock` owns bounded source requests, explicit source identity, raw response
 evidence, parsing and clearly reported errors. Consumers own warehouse publication,
 historical PIT admission, task scheduling, policies and trading decisions. The
 library imports no consumer package, writes no warehouse and launches no timers.
 
-The first adapters are:
+The maintained contracts enumerate 14 default requests across these adapters:
 
 | Capability | Actual backend | Use ceiling |
 | --- | --- | --- |
 | `astock.lpr` | ChinaMoney `LprHis`, HTTPS POST | Source-observed LPR rates with effective dates; no inferred publication clock |
 | `astock.rss` | Configured RSS/Atom publisher; default CNBC public feed | News discovery with optional publisher-provided, timezone-aware clocks |
+| `astock.quotes` | Tencent, Sina and Eastmoney single-security snapshots | Native-price diagnostics, explicit venue and unknown adjustment basis; no suspension or fill inference |
+| `astock.macro` | Eastmoney CPI, PPI, PMI, GDP and M2 | Current-vintage, named numeric source fields; report period text is not a release clock |
+| `astock.bonds` | ChinaBond identified treasury maturity curve | Exact curve ID/name and source date; native maturity/yield pairs |
+| `astock.disclosures` | CNINFO HTTPS announcement index | Index metadata and exact millisecond timestamp; no attachment/body retrieval |
+| `astock.news` | Sina roll channels 2516 and 2510 | Feed metadata and optional creation epoch; no regulatory-authority or freshness claim |
 
 ChinaMoney is an additional backend to the original skill's Eastmoney LPR helper.
 It is not an automatic fallback disguised as the same provider. Duplicate endpoints
@@ -49,6 +54,17 @@ missing, unrecognized or timezone-free times remain unknown. Acquisition time ne
 fills a missing publication time. A successful parse does not grant historical PIT
 or whole-vendor/whole-universe acceptance.
 
+Macro, curve and quote records label values `SOURCE_NATIVE_UNNORMALIZED`. Consumers
+must establish field units/basis before numerical integration. No series is silently
+rebased, rescaled or adjusted. An absent Eastmoney quote clock remains unknown.
+CNINFO's source timestamp remains an integer in milliseconds, including values later
+than acquisition; it is not asserted to be an exact publication or knowledge clock.
+The disclosure request is a bounded broad index search, not a verified security or
+exchange filter. Sina's channel 2510 can return old items; successful retrieval says
+nothing about current-policy coverage. The raw envelope retains fields not projected
+into the typed records. A malformed item rejects the response rather than dropping
+bad records and reporting a misleading partial success.
+
 The HTTPS transport disables ambient proxies, retries and redirects, uses a 3-second
 connect/5-second read timeout, and caps retained bodies at 256 KiB by default. It
 checks a 12-second body-read budget between chunks. DNS resolution and an active
@@ -67,7 +83,7 @@ print(result.status, result.reason)
 ```
 
 For RSS, use `rss.request(provider="cnbc", url=rss.CNBC_URL)` and `rss.parse(raw)`.
-`astock.capabilities()` enumerates the two default source requests without network
+`astock.capabilities()` enumerates the 14 default source requests without network
 access; it is an interface registry, not an admission or availability registry.
 Parsing can be replayed from retained observations without network access.
 Consumers should pin an exact commit or built package digest, rather than install
@@ -84,6 +100,20 @@ Preserve the original license/attribution and record newly copied code's provena
 make check
 make check-upstream
 ```
+
+Create a separate Python 3.10+ virtual environment and install the build pins from
+`requirements-build.txt`, then install `.[upstream-test]` for the retained example
+tests. The maintained library needs only its declared `requests` dependency. Existing
+consumer environments need not be modified. Build outside the checkout when desired:
+
+```bash
+SOURCE_DATE_EPOCH=1793232000 make build PYTHON=/path/to/venv/bin/python DIST_DIR=/path/to/output
+```
+
+For a reproducibility check, build twice with the same source tree, build dependency
+closure and `SOURCE_DATE_EPOCH`; compare the wheel SHA256 and test an installed wheel
+from outside the checkout. The source archive also retains the original upstream
+skill/examples; wheel imports expose only the maintained `astock` package.
 
 `check` runs the maintained library's offline synthetic contracts. `check-upstream`
 also runs the retained original tests and needs their optional spreadsheet clients

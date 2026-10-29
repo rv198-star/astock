@@ -1,7 +1,7 @@
 <p align="center"><b>简体中文</b> | <a href="README_en.md">English</a></p>
 
 > **本 fork 的维护范围：** 在保留上游技能和历史的基础上，独立维护 Python 3.10+
-> 数据源适配库 `src/astock`。首批为中国货币网 LPR 直连与 RSS/Atom；用法、来源身份、
+> 数据源适配库 `src/astock`，含 LPR、RSS、行情、宏观、国债曲线及公告索引；用法、来源身份、
 > 测试和能力边界见[采集库说明](docs/source-library.md)。不依赖具体消费者项目。
 > 以下为保留的上游 a-stock-data 说明；本文件新增了上述 fork 维护提示。
 

@@ -1,0 +1,6 @@
+build==1.2.2.post1
+setuptools==75.8.2
+wheel==0.45.1
+packaging==24.2
+pyproject_hooks==1.2.0
+tomli==2.2.1; python_version < "3.11"

@@ -1,0 +1,3 @@
+include AGENTS.md SKILL.md README_en.md CHANGELOG.md Makefile requirements-build.txt
+recursive-include docs *.md
+recursive-include tests *.py
