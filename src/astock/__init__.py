@@ -3,7 +3,7 @@
 from .contracts import FetchResult, RawObservation, SourceRequest, Status
 
 __all__ = ["FetchResult", "RawObservation", "SourceRequest", "Status", "capabilities"]
-__version__ = "0.1.2"
+__version__ = "0.1.3"
 
 
 def capabilities() -> tuple[SourceRequest, ...]:
@@ -15,6 +15,7 @@ def capabilities() -> tuple[SourceRequest, ...]:
         disclosures,
         etf_flow,
         funds,
+        futures,
         lpr,
         macro,
         news,
@@ -23,7 +24,8 @@ def capabilities() -> tuple[SourceRequest, ...]:
     )
 
     requests = [lpr.request(), rss.request(), bonds.request(), disclosures.request(), funds.request()]
-    requests.extend((announcements.request(), etf_flow.request(), convertibles.request()))
+    requests.extend((announcements.request(), etf_flow.request(), convertibles.request(),
+                     futures.request()))
     requests.extend(macro.request(series) for series in sorted(macro.REPORTS))
     requests.extend(news.request(channel) for channel in (2510, 2516))
     requests.extend(quotes.request(provider) for provider in ("tencent", "sina", "eastmoney"))

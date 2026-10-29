@@ -3,7 +3,7 @@
 This public fork maintains a consumer-independent Python source library alongside
 the original a-stock-data skill. Its initial upstream baseline is
 `simonlin1212/a-stock-data@cb57c7aba720380b48a11dd065c6db57a2c39db9` (SKILL 3.10.3).
-The library has its own version, currently 0.1.2. The original skill version and
+The library has its own version, currently 0.1.3. The original skill version and
 the library version are different identities.
 
 ## Scope and adapters
@@ -13,7 +13,7 @@ evidence, parsing and clearly reported errors. Consumers own warehouse publicati
 historical PIT admission, task scheduling, policies and trading decisions. The
 library imports no consumer package, writes no warehouse and launches no timers.
 
-The maintained contracts enumerate 18 default requests across these adapters:
+The maintained contracts enumerate 19 default requests across these adapters:
 
 | Capability | Actual backend | Use ceiling |
 | --- | --- | --- |
@@ -87,7 +87,7 @@ print(result.status, result.reason)
 ```
 
 For RSS, use `rss.request(provider="cnbc", url=rss.CNBC_URL)` and `rss.parse(raw)`.
-`astock.capabilities()` enumerates the 18 default source requests without network
+`astock.capabilities()` enumerates the 19 default source requests without network
 access; it is an interface registry, not an admission or availability registry.
 Parsing can be replayed from retained observations without network access.
 Consumers should pin an exact commit or built package digest, rather than install
@@ -151,3 +151,26 @@ skill/examples; wheel imports expose only the maintained `astock` package.
 also runs the retained original tests and needs their optional spreadsheet clients
 (including openpyxl). Live upstream tests remain opt-in. Report these checks
 separately; a pass of new-library contracts is not a full upstream compatibility pass.
+
+## PVC futures price snapshot (0.1.3)
+
+`astock.futures.request("V2701")` requests exactly one dated PVC contract via Sina
+HTTPS with a public Referer. `parse(raw, contract="V2701")` checks the exact
+request, echoed symbol, PVC name, Dalian marker and qualified 44-field schema.
+It preserves raw prices and independent native date/time labels. Missing or zero
+last prices fail; previous settlement is never substituted. No JavaScript executes.
+
+Qualification on 2026-10-30 used the publisher's
+[contract page](https://finance.sina.com.cn/futures/quotes/V2701.shtml) and its
+[field mapping](https://n.sinaimg.cn/finance/futures/moudler20200421.js), accounting
+for the symbol prepended by the publisher before display. The DCE-authored
+[contract PDF](https://www.htfc.com/wz_upload/png_upload/20240207/17072856162152a5658.pdf)
+confirms CNY/tonne and 5 tonnes/lot. Contract size is not a price multiplier.
+Official-host contract/guide requests timed out. Different reference tick sizes
+are unresolved; tick size, volume/open-interest units, trading-day attribution,
+calendar quote timestamp and publication time are outside this contract.
+
+Default V2701 is a named observation sample, never an automatically rolled main
+contract. Consumers must govern listing evidence and a conservative expiry bound
+before acquisition. A vendor snapshot does not establish a physical spot price,
+real-time freshness, historical PIT eligibility, or an execution price.
